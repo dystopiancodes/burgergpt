@@ -48,7 +48,7 @@
 
 ### Frontend
 
-1. Navigate to the frontend directory:
+1. Open a new terminal and navigate to the frontend directory:
 
    ```bash
    cd frontend

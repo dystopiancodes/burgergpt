@@ -81,7 +81,7 @@ const App: React.FC = () => {
 
   return (
     <div className="App">
-      <h1>Private Q&A Chatbot</h1>
+      <h1>Burger King GPT</h1>
       <form onSubmit={handleSubmit}>
         <input
           type="text"
