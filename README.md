@@ -29,13 +29,19 @@
    pip install -r requirements.txt
    ```
 
-5. Create the Chroma database:
+5. Create a .env file by copying the example file and set your OpenAI API key:
+
+   ```bash
+   cp .env.example .env
+   ```
+
+6. Create the Chroma database:
 
    ```bash
    python create_chroma_db.py
    ```
 
-6. Run the FastAPI server:
+7. Run the FastAPI server:
    ```bash
    uvicorn main:app --reload
    ```

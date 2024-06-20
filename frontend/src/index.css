@@ -1,0 +1,13 @@
+.App {
+  text-align: center;
+  padding: 20px;
+}
+
+.chat-history {
+  margin-top: 20px;
+}
+
+.chat-item {
+  border-bottom: 1px solid #ccc;
+  padding: 10px;
+}
