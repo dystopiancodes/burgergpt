@@ -1,4 +1,4 @@
-# Chatbot Project
+# Burger King RAG
 
 ## Setup Instructions
 
