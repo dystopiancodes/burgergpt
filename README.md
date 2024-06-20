@@ -4,35 +4,35 @@
 
 ### Backend
 
-1. Ensure you have Python 3 installed. Check with:
+1. Create a .env file by copying the example file and set your OpenAI API key:
+
+   ```bash
+   cp .env.example .env
+   ```
+
+2. Ensure you have Python 3 installed. Check with:
 
    ```bash
    python3 --version
    ```
 
-2. Navigate to the backend directory:
+3. Navigate to the backend directory:
 
    ```bash
    cd backend
    ```
 
-3. Create a virtual environment and activate it using Python 3:
+4. Create a virtual environment and activate it using Python 3:
 
    ```bash
    python3 -m venv venv
    source venv/bin/activate  # On Windows use `venv\Scripts\activate`
    ```
 
-4. Install the dependencies:
+5. Install the dependencies:
 
    ```bash
    pip install -r requirements.txt
-   ```
-
-5. Create a .env file by copying the example file and set your OpenAI API key:
-
-   ```bash
-   cp .env.example .env
    ```
 
 6. Create the Chroma database:
@@ -48,7 +48,7 @@
 
 ### Frontend
 
-1. Open a new terminal and navigate to the frontend directory:
+1. Navigate to the frontend directory:
 
    ```bash
    cd frontend
