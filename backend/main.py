@@ -41,7 +41,7 @@ socket_manager = SocketManager(app=app)
 
 # Initialize embeddings, model, and database
 embeddings = OpenAIEmbeddings(api_key=openai_api_key)
-llm = ChatOpenAI(model="gpt-3.5-turbo", temperature=0)
+llm = ChatOpenAI(model="gpt-3.5-turbo", temperature=0, api_key=openai_api_key)
 
 directory = "chromadb"
 db = Chroma(
@@ -112,6 +112,10 @@ async def chat(query_request: QueryRequest):
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
     await websocket.accept()
+    global chat_history
+    # Clear the chat history when a new WebSocket connection is established
+    chat_history = []
+    await websocket.send_text("History cleared")
     try:
         while True:
             data = await websocket.receive_text()
