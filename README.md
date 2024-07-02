@@ -20,6 +20,8 @@
 
    ```bash
    cd backend
+
+
    ```
 
 4. Create a virtual environment and activate it using Python 3:
@@ -27,6 +29,9 @@
    ```bash
    python3 -m venv venv
    source venv/bin/activate  # On Windows use `venv\Scripts\activate`
+   mkdir -p backend/venv/hf_home
+   mkdir -p backend/models
+
    ```
 
 5. Install the dependencies:
@@ -34,6 +39,11 @@
    ```bash
    pip install -r requirements.txt
    ```
+
+huggingface-cli login
+
+transformers-cli download mistralai/Mistral-7B-Instruct-v0.1 --cache-dir ../backend/m
+odels
 
 6. Create the Chroma database:
 

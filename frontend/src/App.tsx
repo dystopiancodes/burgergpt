@@ -29,6 +29,7 @@ const App: React.FC = () => {
       console.log("WebSocket connection established");
     };
     ws.onmessage = (event) => {
+      console.log("Received message from WebSocket:", event.data);
       if (event.data === "History cleared") {
         setResponse("");
         setHistory([]);
@@ -56,6 +57,7 @@ const App: React.FC = () => {
     e.preventDefault();
     setLoading(true);
     setResponse("");
+    console.log("Sending query:", query);
     if (socketRef.current && socketRef.current.readyState === WebSocket.OPEN) {
       socketRef.current.send(query);
       setHistory((prevHistory) => [...prevHistory, { query, response: "" }]);
@@ -74,6 +76,7 @@ const App: React.FC = () => {
         if (lastIndex >= 0) {
           updatedHistory[lastIndex].response = response;
         }
+        console.log("Updated history:", updatedHistory);
         return updatedHistory;
       });
     }

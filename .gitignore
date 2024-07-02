@@ -2,3 +2,5 @@ venv
 chromadb
 __pycache__
 .env
+models
+offload
