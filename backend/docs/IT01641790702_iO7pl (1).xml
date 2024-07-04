@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?><ns3:FatturaElettronica xmlns:ns3="http://ivaservizi.agenziaentrate.gov.it/docs/xsd/fatture/v1.2" xmlns:ns2="http://www.w3.org/2000/09/xmldsig#" versione="FPR12"><FatturaElettronicaHeader>
+        <DatiTrasmissione>
+            <IdTrasmittente>
+                <IdPaese>IT</IdPaese>
+                <IdCodice>01641790702</IdCodice>
+            </IdTrasmittente>
+            <ProgressivoInvio>00000eqvwg</ProgressivoInvio>
+            <FormatoTrasmissione>FPR12</FormatoTrasmissione>
+            <CodiceDestinatario>SUBM70N</CodiceDestinatario>
+            <ContattiTrasmittente>
+                <Telefono>0874-60561</Telefono>
+            </ContattiTrasmittente>
+        </DatiTrasmissione>
+        <CedentePrestatore>
+            <DatiAnagrafici>
+                <IdFiscaleIVA>
+                    <IdPaese>IT</IdPaese>
+                    <IdCodice>01384640999</IdCodice>
+                </IdFiscaleIVA>
+                <CodiceFiscale>01384640999</CodiceFiscale>
+                <Anagrafica>
+                    <Denominazione>DASTechnologies Srl</Denominazione>
+                </Anagrafica>
+                <RegimeFiscale>RF01</RegimeFiscale>
+            </DatiAnagrafici>
+            <Sede>
+                <Indirizzo>VIA A.M. MARAGLIANO 2/2</Indirizzo>
+                <CAP>16121</CAP>
+                <Comune>Genova</Comune>
+                <Provincia>GE</Provincia>
+                <Nazione>IT</Nazione>
+            </Sede>
+        </CedentePrestatore>
+        <CessionarioCommittente>
+            <DatiAnagrafici>
+                <IdFiscaleIVA>
+                    <IdPaese>IT</IdPaese>
+                    <IdCodice>03504930961</IdCodice>
+                </IdFiscaleIVA>
+                <CodiceFiscale>03504930961</CodiceFiscale>
+                <Anagrafica>
+                    <Denominazione>ZERO100 s.r.l.</Denominazione>
+                </Anagrafica>
+            </DatiAnagrafici>
+            <Sede>
+                <Indirizzo>Via Santa Sofia 12</Indirizzo>
+                <CAP>20122</CAP>
+                <Comune>Milano</Comune>
+                <Provincia>MI</Provincia>
+                <Nazione>IT</Nazione>
+            </Sede>
+        </CessionarioCommittente>
+        <TerzoIntermediarioOSoggettoEmittente>
+            <DatiAnagrafici>
+                <IdFiscaleIVA>
+                    <IdPaese>IT</IdPaese>
+                    <IdCodice>01641790702</IdCodice>
+                </IdFiscaleIVA>
+                <CodiceFiscale>01641790702</CodiceFiscale>
+                <Anagrafica>
+                    <Denominazione>TEAMSYSTEM SERVICE SRL</Denominazione>
+                </Anagrafica>
+            </DatiAnagrafici>
+        </TerzoIntermediarioOSoggettoEmittente>
+        <SoggettoEmittente>TZ</SoggettoEmittente>
+    </FatturaElettronicaHeader><FatturaElettronicaBody>
+        <DatiGenerali>
+            <DatiGeneraliDocumento>
+                <TipoDocumento>TD01</TipoDocumento>
+                <Divisa>EUR</Divisa>
+                <Data>2019-10-31</Data>
+                <Numero>577</Numero>
+                <ImportoTotaleDocumento>2562.00</ImportoTotaleDocumento>
+                <Causale>Ns Riferimento: Stefano Gasciarini Vs Riferimento: Vittorio Bottani Ns Offerta n.: 064-20190830- Zero Cento Attività Sistemistica  SG evasione parziale</Causale>
+            </DatiGeneraliDocumento>
+        </DatiGenerali>
+        <DatiBeniServizi>
+            <DettaglioLinee>
+                <NumeroLinea>1</NumeroLinea>
+                <CodiceArticolo>
+                    <CodiceTipo>INTERNO</CodiceTipo>
+                    <CodiceValore>Servizi Dast</CodiceValore>
+                </CodiceArticolo>
+                <Descrizione>Supporto Sistemistico // Ottobre 2019</Descrizione>
+                <Quantita>1.00</Quantita>
+                <PrezzoUnitario>2100.00</PrezzoUnitario>
+                <PrezzoTotale>2100.00</PrezzoTotale>
+                <AliquotaIVA>22.00</AliquotaIVA>
+            </DettaglioLinee>
+            <DatiRiepilogo>
+                <AliquotaIVA>22.00</AliquotaIVA>
+                <ImponibileImporto>2100.00</ImponibileImporto>
+                <Imposta>462.00</Imposta>
+            </DatiRiepilogo>
+        </DatiBeniServizi>
+        <DatiPagamento>
+            <CondizioniPagamento>TP02</CondizioniPagamento>
+            <DettaglioPagamento>
+                <ModalitaPagamento>MP05</ModalitaPagamento>
+                <DataScadenzaPagamento>2020-01-31</DataScadenzaPagamento>
+                <ImportoPagamento>2562.00</ImportoPagamento>
+                <IstitutoFinanziario>CREDEM</IstitutoFinanziario>
+                <IBAN>IT31R0303201400010000196456</IBAN>
+            </DettaglioPagamento>
+        </DatiPagamento>
+    </FatturaElettronicaBody></ns3:FatturaElettronica>

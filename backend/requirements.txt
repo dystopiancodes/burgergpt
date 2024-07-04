@@ -13,3 +13,8 @@ python-dotenv
 langchain_huggingface
 accelerate
 transformers
+gradio 
+xformer
+bitsandbytes 
+unstructured 
+sentence-transformers

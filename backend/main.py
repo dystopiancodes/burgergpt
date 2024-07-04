@@ -1,18 +1,20 @@
 import os
 import logging
+import torch
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-from langchain.chains import create_history_aware_retriever, create_retrieval_chain
+from langchain.chains import ConversationalRetrievalChain
 from langchain_community.vectorstores import Chroma
 from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_core.messages import HumanMessage, AIMessage, SystemMessage
-from transformers import AutoModelForCausalLM, AutoTokenizer, AutoConfig
-from accelerate import init_empty_weights, infer_auto_device_map, load_checkpoint_and_dispatch
+from transformers import AutoModelForCausalLM, AutoTokenizer, GenerationConfig, pipeline
 from fastapi_socketio import SocketManager
+from langchain.memory import ConversationBufferMemory
 import asyncio
 from dotenv import load_dotenv
+from langchain_huggingface import HuggingFacePipeline
 
 load_dotenv()
 
@@ -44,72 +46,69 @@ db = Chroma(
     persist_directory=directory
 )
 
-os.environ["HF_HOME"] = os.path.join(os.getcwd(), "models")
-model_path = os.path.join(os.getcwd(), "models", "models--mistralai--Mistral-7B-Instruct-v0.1", "snapshots", "86370fc1f5e0aa51b50dcdf6eada80697b570099")
+model_name = "mistralai/Mistral-7B-Instruct-v0.1"
 
-hf_api_token = os.getenv("HUGGINGFACE_API_TOKEN")
+logging.info("Loading Mistral tokenizer and model...")
+tokenizer = AutoTokenizer.from_pretrained(model_name, use_fast=True)
+tokenizer.pad_token = tokenizer.eos_token
 
-logging.info("Loading Mistral tokenizer...")
-tokenizer = AutoTokenizer.from_pretrained(model_path, cache_dir=os.environ["HF_HOME"])
+model = AutoModelForCausalLM.from_pretrained(
+    model_name,
+    torch_dtype=torch.float16 if torch.cuda.is_available() else torch.float32,
+    trust_remote_code=True,
+)
 
-logging.info("Initializing empty model for memory efficient loading...")
-config = AutoConfig.from_pretrained(model_path, cache_dir=os.environ["HF_HOME"])
-with init_empty_weights():
-    model = AutoModelForCausalLM.from_config(config)
+if torch.cuda.is_available():
+    model = model.to("cuda")
 
-offload_folder = os.path.join(os.getcwd(), "offload")
+generation_config = GenerationConfig.from_pretrained(model_name)
+generation_config.max_new_tokens = 1024
+generation_config.temperature = 0.0001
+generation_config.top_p = 0.95
+generation_config.do_sample = True
+generation_config.repetition_penalty = 1.15
 
-logging.info("Loading model checkpoint with accelerate...")
-device_map = infer_auto_device_map(model)
-model = load_checkpoint_and_dispatch(model, model_path, device_map=device_map, offload_folder=offload_folder)
+pipe = pipeline(
+    "text-generation",
+    model=model,
+    tokenizer=tokenizer,
+    config=generation_config,
+)
 
-logging.info("Model loaded successfully.")
+class CustomHuggingFacePipeline(HuggingFacePipeline):
+    def generate(self, prompt, **kwargs):
+        max_new_tokens = kwargs.get("max_new_tokens", 1024)
+        result = self.pipeline(prompt, max_new_tokens=max_new_tokens)
+        # Ensure the response is extracted correctly
+        return result[0]['generated_text']
 
-def generate_response(prompt, max_length=200):
-    if isinstance(prompt, list):
-        prompt = " ".join(message.content for message in prompt)
-    logging.debug(f"generate_response received prompt: {prompt}")
-    if not isinstance(prompt, str):
-        raise ValueError("Prompt must be a string")
-    logging.info("Tokenizing input prompt...")
-    inputs = tokenizer(prompt, return_tensors="pt")
-    logging.info("Generating model response...")
-    outputs = model.generate(inputs["input_ids"], max_length=max_length)
-    response = tokenizer.decode(outputs[0], skip_special_tokens=True)
-    logging.debug(f"Generated response: {response}")
-    return response
+llm = CustomHuggingFacePipeline(pipeline=pipe)
 
-logging.info("Creating retriever...")
+memory = ConversationBufferMemory(memory_key="chat_history", return_messages=True)
+
 retriever = db.as_retriever()
 
-contextualize_q_system_prompt = """Given a chat history and the latest user question \
-which might reference context in the chat history, formulate a standalone question \
-which can be understood without the chat history. Do NOT answer the question, \
-just reformulate it if needed and otherwise return it as is."""
-contextualize_q_prompt = ChatPromptTemplate.from_messages(
+custom_template = """You are an assistant for question-answering tasks. Given the
+following conversation and a follow-up question, rephrase the follow-up question
+to be a standalone question. If you don't know the answer, just say that you don't know.
+Use three sentences maximum and keep the answer concise.
+
+{context}
+
+{question}"""
+
+CUSTOM_QUESTION_PROMPT = ChatPromptTemplate.from_messages(
     [
-        SystemMessage(content=contextualize_q_system_prompt),
+        SystemMessage(content=custom_template),
         MessagesPlaceholder(variable_name="chat_history"),
         HumanMessage(content="{input}"),
     ]
 )
 
-# Ensuring `input` and `chat_history` are present in the prompt
-contextualize_q_prompt.input_variables = ["input", "chat_history"]
-
-logging.info("Creating history aware retriever...")
-history_aware_retriever = create_history_aware_retriever(
-    llm=model,
-    retriever=retriever,
-    prompt=contextualize_q_prompt
-)
-
-qa_system_prompt = """You are an assistant for question-answering tasks. \
-Use the following pieces of retrieved context to answer the question. \
-If you don't know the answer, just say that you don't know. \
-Use three sentences maximum and keep the answer concise.\
+qa_system_prompt = """You are an assistant for question-answering tasks. Use the following pieces of retrieved context to answer the question. If you don't know the answer, just say that you don't know. Use three sentences maximum and keep the answer concise.
 
 {context}"""
+
 qa_prompt = ChatPromptTemplate.from_messages(
     [
         SystemMessage(content=qa_system_prompt),
@@ -117,53 +116,24 @@ qa_prompt = ChatPromptTemplate.from_messages(
     ]
 )
 
-# Ensuring `input` and `context` are present in the prompt
-qa_prompt.input_variables = ["input", "context"]
-
-logging.info("Creating question answer chain...")
-question_answer_chain = create_retrieval_chain(
-    retriever=history_aware_retriever,
-    combine_docs_chain=qa_prompt
+qa_chain = ConversationalRetrievalChain.from_llm(
+    llm=llm,
+    retriever=retriever,
+    memory=memory,
+    condense_question_prompt=CUSTOM_QUESTION_PROMPT,
+    return_source_documents=True
 )
-
-chat_history = []
-
-def get_chat_history():
-    formatted_history = []
-    for entry in chat_history:
-        formatted_history.append(HumanMessage(content=entry['query']))
-        formatted_history.append(AIMessage(content=entry['answer']))
-    return formatted_history
-
-def extract_answer(response):
-    # Extract the actual answer text from the response
-    if isinstance(response, dict) and 'answer' in response:
-        answer_obj = response['answer']
-        if isinstance(answer_obj, list):
-            for item in answer_obj:
-                if isinstance(item, AIMessage):
-                    return item.content
-                elif isinstance(item, dict) and 'content' in item:
-                    return item['content']
-    return "No answer found"
 
 @app.post("/api/chat")
 async def chat(query_request: QueryRequest):
-    global chat_history
-    formatted_history = get_chat_history()
-    logging.debug(f"chat endpoint received query: {query_request.query}")
-    response = question_answer_chain.invoke({"input": query_request.query, "chat_history": formatted_history})
-    logging.debug(f"Raw response from question_answer_chain: {response}")
-    answer = extract_answer(response)
-    logging.debug(f"Extracted answer: {answer}")
-    chat_history.append({"query": query_request.query, "answer": answer})
+    response = qa_chain.invoke({"question": query_request.query})
+    answer = response['answer'].strip()
     return {"answer": answer}
 
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
     await websocket.accept()
-    global chat_history
-    chat_history = []
+    memory.chat_memory.clear()
     await websocket.send_text("History cleared")
     logging.info("WebSocket connection established and history cleared")
     try:
@@ -172,16 +142,10 @@ async def websocket_endpoint(websocket: WebSocket):
             logging.debug(f"WebSocket received data: {data}")
             if not isinstance(data, str):
                 raise ValueError("Data received must be a string")
-            formatted_history = get_chat_history()
-            logging.debug(f"Formatted chat history: {formatted_history}")
 
-            response = question_answer_chain.invoke({"input": data, "chat_history": formatted_history})
-            logging.debug(f"Raw response from question_answer_chain: {response}")
-
-            answer = extract_answer(response)
-            logging.debug(f"Extracted answer: {answer}")
-
-            chat_history.append({"query": data, "answer": answer})
+            response = qa_chain.invoke({"question": data})
+            answer = response['answer'].strip()
+            logging.debug(f"Generated answer: {answer}")
 
             if isinstance(answer, str):
                 for i in range(0, len(answer), 10):
@@ -202,5 +166,4 @@ async def websocket_endpoint(websocket: WebSocket):
 
 @app.get("/api/history")
 async def history():
-    global chat_history
-    return {"history": chat_history}
+    return {"history": memory.chat_memory.messages}
