@@ -18,3 +18,4 @@ xformer
 bitsandbytes 
 unstructured 
 sentence-transformers
+aiofiles

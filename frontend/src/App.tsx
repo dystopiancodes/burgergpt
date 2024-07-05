@@ -82,9 +82,16 @@ const App: React.FC = () => {
     }
   }, [response, loading]);
 
+  const parseResponse = (response: string) => {
+    const parts = response.split("\n\nSources: ");
+    const mainResponse = parts[0];
+    const sources = parts[1] ? parts[1].split(", ") : [];
+    return { mainResponse, sources };
+  };
+
   return (
     <div className="App">
-      <h1>Burger King GPT</h1>
+      <h1>XML local chroma gpt</h1>
       <form onSubmit={handleSubmit}>
         <input
           type="text"
@@ -98,16 +105,46 @@ const App: React.FC = () => {
       </form>
       {loading && <p>Loading...</p>}
       <div className="chat-history">
-        {history.map((item, index) => (
-          <div key={index} className="chat-item">
-            <p>
-              <strong>Query:</strong> {item.query}
-            </p>
-            <p>
-              <strong>Response:</strong> {item.response}
-            </p>
-          </div>
-        ))}
+        {history.map((item, index) => {
+          const { mainResponse, sources } = parseResponse(item.response);
+          return (
+            <div key={index} className="chat-item">
+              <p>
+                <strong>Query:</strong> {item.query}
+              </p>
+              <p>
+                <strong>Response:</strong> {mainResponse}
+              </p>
+              {sources.length > 0 && (
+                <p>
+                  <strong>Sources:</strong>
+                  <ul>
+                    {sources.map((source, i) => {
+                      const match = source.match(/\[(.*)\]\((.*)\)/);
+                      if (match) {
+                        const [_, title, link] = match;
+                        const fullLink = `http://localhost:8000${link}`;
+                        return (
+                          <li key={i}>
+                            <a
+                              href={fullLink}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                            >
+                              {title}
+                            </a>
+                          </li>
+                        );
+                      } else {
+                        return <li key={i}>{source}</li>;
+                      }
+                    })}
+                  </ul>
+                </p>
+              )}
+            </div>
+          );
+        })}
       </div>
     </div>
   );
